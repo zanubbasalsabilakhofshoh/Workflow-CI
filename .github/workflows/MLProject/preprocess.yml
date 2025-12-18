@@ -1,0 +1,39 @@
+name: Preprocess Hear Disease
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'namadataset_raw/**'
+      - 'preprocessing/automate_Zanubba.py'
+      - 'preprocessing/Eksperimen_ZanubbaSalsabilaKhofshoh-M180D5X2015.ipynb'
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.7"
+
+      - name: Install dependencies
+        run: |
+          pip install pandas scikit-learn numpy joblib
+
+      - name: Run preprocessing script
+        working-directory: ./preprocessing
+        run: |
+          python automate_Zanubba.py
+
+      - name: Upload processed dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataset_preprocessed
+
+          path: preprocessing/heart_disease_preprocessing.csv
