@@ -12,7 +12,7 @@ def main():
     mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment("ci-training")
 
-    DATA_PATH = "MLProject/dataset_preprocessed/heart_disease_preprocessing.csv"
+    DATA_PATH = "../MLProject/dataset_preprocessed/heart_disease_preprocessing.csv"
 
     df = pd.read_csv(DATA_PATH)
     X = df.drop("target", axis=1)
