@@ -1,39 +1,48 @@
+import os
+import shutil
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
 import mlflow
 import mlflow.sklearn
-import joblib
-import os
 
-data_path = 'dataset_preprocessed/heart_disease_preprocessing.csv'
-df = pd.read_csv(data_path)
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 
-X = df.drop('target', axis=1)
-y = df['target']
+def main():
+    mlflow.set_tracking_uri("file:./mlruns")
+    mlflow.set_experiment("ci-training")
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    DATA_PATH = "MLProject/dataset_preprocessed/heart_disease_preprocessing.csv"
 
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+    df = pd.read_csv(DATA_PATH)
+    X = df.drop("target", axis=1)
+    y = df["target"]
 
-y_pred = model.predict(X_test)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-accuracy = accuracy_score(y_test, y_pred)
-report = classification_report(y_test, y_pred)
+    with mlflow.start_run(run_name="rf_ci_run"):
+        mlflow.sklearn.autolog()
 
-print(f"Accuracy: {accuracy}")
-print("Classification Report:")
-print(report)
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        model.fit(X_train, y_train)
 
-with mlflow.start_run():
-    mlflow.log_param("model_type", "RandomForest")
-    mlflow.log_param("n_estimators", 100)
-    mlflow.log_metric("accuracy", accuracy)
-    mlflow.sklearn.log_model(model, "model")
+        y_pred = model.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+        mlflow.log_metric("accuracy_manual", acc)
 
-os.makedirs('models', exist_ok=True)
-joblib.dump(model, 'models/heart_disease_model.pkl')
+        mlflow.sklearn.log_model(model, "model")
 
-print("Model training completed and saved.")
+        run_id = mlflow.active_run().info.run_id
+
+    os.makedirs("outputs", exist_ok=True)
+
+    run_artifacts = os.path.join("mlruns", "0", run_id, "artifacts")
+    if os.path.exists(run_artifacts):
+        shutil.make_archive("outputs/mlflow_artifacts", "zip", run_artifacts)
+
+    print("Training selesai (CI). Run ID:", run_id)
+
+if __name__ == "__main__":
+    main()

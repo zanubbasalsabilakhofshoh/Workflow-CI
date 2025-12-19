@@ -1,15 +1,10 @@
-name: ml-ci_env
+name: ml_env
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python=3.12.7
   - pip
   - pip:
       - mlflow==2.19.0
-      - numpy
       - pandas
-      - matplotlib
-      - seaborn
-      - scikit-learn
-      - requests
+      - scikit-learn==1.5.2

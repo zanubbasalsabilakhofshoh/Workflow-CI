@@ -1,46 +1,39 @@
-name: MLflow CI - Retrain on Trigger
+name: CI - MLflow Project Retrain
 
 on:
+  workflow_dispatch:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    paths:
+      - "MLProject/**"
 
 jobs:
   train:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
 
-        env:
-          MLFLOW_TRACKING_URI: file:${{ github.workspace }}/mlruns
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.7"
 
-            - name: Set up Conda
-              uses: conda-incubator/setup-miniconda@v2
-              with:
-                auto-update-conda: true
-                activate-environment: ml-ci_env
-                environment-file: MLProject/conda.yaml
-                python-version: 3.12.7
-            - name: Check environment
-              run: |
-                conda info
-                conda list
-            - name: Install dependencies
-              run: |
-                pip install -r MLProject/requirements.txt
-            -name: Set MLflow tracking URI
-             run: |
-               echo "MLFLOW_TRACKING_URI=file://${{ github.workspace }}/mlruns" >> $GITHUB_ENV
-            -name: Run MLflow project
-             run: |
-               mlflow run MLProject -P alpha=0.5 -P l1_ratio=0.1
-            -name: Post Set Up 3.12.7
-             run: |
-               python --version
-               pip show mlflow
+      - name: Install MLflow
+        run: |
+          python -m pip install --upgrade pip
+          pip install mlflow==2.19.0
+
+      - name: Run MLflow Project
+        working-directory: MLProject
+        run: |
+          mlflow run . -e main
+
+      - name: Upload MLflow outputs (GitHub Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-training-artifacts
+          path: |
+            MLProject/mlruns
+            MLProject/outputs
+          if-no-files-found: error
