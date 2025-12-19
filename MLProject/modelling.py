@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import pickle
+import os
 
 df = pd.read_csv('dataset_preprocessed/heart_disease_preprocessing.csv')
 
@@ -20,6 +21,8 @@ accuracy = accuracy_score(y_test, y_pred)
 
 mlflow.log_param("n_estimators", 100)
 mlflow.log_metric("accuracy", accuracy)
+
+os.makedirs('outputs', exist_ok=True)
 
 with open('outputs/model.pkl', 'wb') as f:
     pickle.dump(model, f)
