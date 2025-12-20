@@ -1,4 +1,4 @@
-name: ci-training
+name: heart-disease-ci
 
 conda_env: conda.yaml
 

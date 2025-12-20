@@ -1,32 +1,39 @@
-import mlflow
+import os
 import pandas as pd
+import mlflow
+import mlflow.sklearn
+
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-import pickle
-import os
 
-df = pd.read_csv('dataset_preprocessed/heart_disease_preprocessing.csv')
 
-X = df.drop('target', axis=1)
-y = df['target']
+def main():
+    data_path = os.environ.get(
+        "DATA_PATH",
+        "heart_disease_preprocessing.csv"
+    )
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    df = pd.read_csv(data_path)
+    X = df.drop("target", axis=1)
+    y = df["target"]
 
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
 
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+    # Autolog
+    mlflow.sklearn.autolog()
 
-mlflow.log_param("n_estimators", 100)
-mlflow.log_metric("accuracy", accuracy)
+    with mlflow.start_run(run_name="ci_rf_autolog"):
+        model = RandomForestClassifier(
+            n_estimators=100,
+            random_state=42
+        )
+        model.fit(X_train, y_train)
 
-os.makedirs('outputs', exist_ok=True)
-
-with open('outputs/model.pkl', 'wb') as f:
-    pickle.dump(model, f)
-
-mlflow.log_artifact('outputs/model.pkl')
-
-print(f"Accuracy: {accuracy}")
+if __name__ == "__main__":
+    main()
